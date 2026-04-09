@@ -1,0 +1,81 @@
+{% extends 'accounts/base.html' %}
+{% block title %}Glamour — Cosmetics Store{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+
+    <!-- Hero -->
+    <section class="bg-gradient-to-br from-purple-600 to-pink-400 text-white py-24 px-6 text-center">
+        <h1 class="text-5xl font-bold mb-4">Beauty, Redefined.</h1>
+        <p class="text-lg text-purple-100 mb-8 max-w-xl mx-auto">
+            Discover premium cosmetics crafted for every skin type. Look good, feel great.
+        </p>
+        <a href="{% url 'product_list' %}"
+            class="bg-white text-purple-700 font-semibold px-8 py-3 rounded-full hover:bg-purple-50 transition shadow">
+            Shop Now
+        </a>
+    </section>
+
+    <!-- Featured Products -->
+    <section class="max-w-6xl mx-auto px-6 py-16">
+        <h2 class="text-2xl font-bold text-gray-800 mb-8 text-center">Featured Products</h2>
+
+        {% if featured_products %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {% for product in featured_products %}
+            <a href="{% url 'product_detail' product.pk %}"
+                class="bg-white rounded-2xl shadow hover:shadow-lg transition overflow-hidden group">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}"
+                        class="w-full h-48 object-cover group-hover:scale-105 transition duration-300">
+                {% else %}
+                    <div class="w-full h-48 bg-purple-50 flex items-center justify-center">
+                        <img src="https://placehold.co/400x300?text=No+Image" alt="No image" class="h-full w-full object-cover opacity-50">
+                    </div>
+                {% endif %}
+                <div class="p-4">
+                    <span class="text-xs text-purple-500 font-medium uppercase tracking-wide">
+                        {{ product.category.name|default:"Uncategorized" }}
+                    </span>
+                    <h3 class="text-gray-800 font-semibold mt-1 truncate">{{ product.name }}</h3>
+                    <div class="flex items-center gap-1 mt-2">
+                        {% with avg=product.average_rating %}
+                        {% for i in "12345" %}
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 {% if avg and forloop.counter <= avg %}text-yellow-400{% else %}text-gray-200{% endif %}" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                        {% endfor %}
+                        <span class="text-xs text-gray-400 ml-1">({{ product.review_count }})</span>
+                        {% endwith %}
+                    </div>
+                    <p class="text-purple-700 font-bold mt-2">Rs. {{ product.price }}</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-16 text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <p>No featured products yet. Check back soon!</p>
+            <a href="{% url 'product_list' %}" class="mt-4 inline-block text-purple-600 hover:underline">
+                Browse all products &rarr;
+            </a>
+        </div>
+        {% endif %}
+
+        <div class="text-center mt-10">
+            <a href="{% url 'product_list' %}"
+                class="border border-purple-600 text-purple-700 px-6 py-3 rounded-lg hover:bg-purple-50 transition font-medium">
+                View All Products
+            </a>
+        </div>
+    </section>
+
+    <footer class="bg-white border-t mt-10 py-6 text-center text-sm text-gray-400">
+        &copy; 2026 Glamour Cosmetics. All rights reserved.
+    </footer>
+
+</div>
+{% endblock %}

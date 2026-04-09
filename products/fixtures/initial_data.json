@@ -1,0 +1,16 @@
+[
+  {"model": "products.category", "pk": 1, "fields": {"name": "Skincare"}},
+  {"model": "products.category", "pk": 2, "fields": {"name": "Makeup"}},
+  {"model": "products.category", "pk": 3, "fields": {"name": "Haircare"}},
+  {"model": "products.category", "pk": 4, "fields": {"name": "Fragrance"}},
+  {"model": "products.category", "pk": 5, "fields": {"name": "Body Care"}},
+
+  {"model": "products.product", "pk": 1, "fields": {"name": "Hydrating Face Serum", "category": 1, "price": "1299.00", "description": "A lightweight serum that deeply hydrates and plumps the skin.", "image": "", "created_at": "2026-01-01T00:00:00Z"}},
+  {"model": "products.product", "pk": 2, "fields": {"name": "Vitamin C Moisturizer", "category": 1, "price": "1499.00", "description": "Brightening moisturizer with Vitamin C for a radiant glow.", "image": "", "created_at": "2026-01-01T00:00:00Z"}},
+  {"model": "products.product", "pk": 3, "fields": {"name": "Matte Lipstick - Rose", "category": 2, "price": "699.00", "description": "Long-lasting matte lipstick in a beautiful rose shade.", "image": "", "created_at": "2026-01-01T00:00:00Z"}},
+  {"model": "products.product", "pk": 4, "fields": {"name": "Foundation SPF 30", "category": 2, "price": "1799.00", "description": "Full coverage foundation with SPF 30 sun protection.", "image": "", "created_at": "2026-01-01T00:00:00Z"}},
+  {"model": "products.product", "pk": 5, "fields": {"name": "Argan Oil Hair Mask", "category": 3, "price": "999.00", "description": "Deep conditioning hair mask enriched with argan oil.", "image": "", "created_at": "2026-01-01T00:00:00Z"}},
+  {"model": "products.product", "pk": 6, "fields": {"name": "Floral Eau de Parfum", "category": 4, "price": "2599.00", "description": "A fresh floral fragrance with notes of rose and jasmine.", "image": "", "created_at": "2026-01-01T00:00:00Z"}},
+  {"model": "products.product", "pk": 7, "fields": {"name": "Shea Butter Body Lotion", "category": 5, "price": "849.00", "description": "Rich body lotion with shea butter for silky smooth skin.", "image": "", "created_at": "2026-01-01T00:00:00Z"}},
+  {"model": "products.product", "pk": 8, "fields": {"name": "Retinol Night Cream", "category": 1, "price": "1999.00", "description": "Anti-aging night cream with retinol to reduce fine lines.", "image": "", "created_at": "2026-01-01T00:00:00Z"}}
+]

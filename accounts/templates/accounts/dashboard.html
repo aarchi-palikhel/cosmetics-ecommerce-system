@@ -1,0 +1,20 @@
+{% extends 'accounts/base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <div class="max-w-2xl mx-auto mt-16 text-center">
+        <div class="bg-white rounded-2xl shadow p-10">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
+            <p class="text-gray-500 mt-2">Welcome back, <span class="text-purple-600 font-semibold">{{ user.username }}</span>!</p>
+            <a href="{% url 'product_list' %}"
+                class="inline-block mt-6 bg-gradient-to-r from-purple-500 to-purple-700 text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition">
+                Browse Products
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

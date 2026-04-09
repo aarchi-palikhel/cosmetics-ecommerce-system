@@ -1,0 +1,110 @@
+{% extends 'accounts/base.html' %}
+{% block title %}Shopping Cart{% endblock %}
+
+{% block content %}
+<div class="p-8 max-w-5xl mx-auto">
+
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Shopping Cart</h1>
+
+    {% if cart.items.all %}
+    <div class="flex flex-col lg:flex-row gap-8">
+
+        <!-- Cart Items -->
+        <div class="flex-1 space-y-4">
+            {% for item in cart.items.all %}
+            <div class="bg-white rounded-2xl shadow p-4 flex items-center gap-4">
+
+                <!-- Image -->
+                <div class="w-20 h-20 rounded-xl overflow-hidden bg-purple-50 flex-shrink-0">
+                    {% if item.product.image %}
+                        <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-full h-full object-cover">
+                    {% else %}
+                        <img src="https://placehold.co/80x80?text=N/A" alt="No image" class="w-full h-full object-cover opacity-50">
+                    {% endif %}
+                </div>
+
+                <!-- Info -->
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-semibold text-gray-800 truncate">{{ item.product.name }}</h3>
+                    <p class="text-sm text-purple-500">{{ item.product.category.name|default:"Uncategorized" }}</p>
+                    <p class="text-sm text-gray-500 mt-1">Rs. {{ item.product.price }} each</p>
+                </div>
+
+                <!-- Quantity -->
+                <form method="post" action="{% url 'cart_update' item.id %}" class="flex items-center gap-2">
+                    {% csrf_token %}
+                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="99"
+                        class="w-16 text-center border border-gray-300 rounded-lg py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                    <button type="submit"
+                        class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg transition">
+                        Update
+                    </button>
+                </form>
+
+                <!-- Subtotal -->
+                <div class="text-right min-w-[90px]">
+                    <p class="font-bold text-purple-700">Rs. {{ item.get_subtotal }}</p>
+                </div>
+
+                <!-- Remove -->
+                <form method="post" action="{% url 'cart_remove' item.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="text-red-400 hover:text-red-600 transition" title="Remove">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </form>
+
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Order Summary -->
+        <div class="w-full lg:w-72">
+            <div class="bg-white rounded-2xl shadow p-6 sticky top-6">
+                <h2 class="text-lg font-bold text-gray-800 mb-4">Order Summary</h2>
+
+                <div class="space-y-3 text-sm text-gray-600">
+                    <div class="flex justify-between">
+                        <span>Subtotal</span>
+                        <span>Rs. {{ cart.get_subtotal }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>VAT (13%)</span>
+                        <span>Rs. {{ cart.get_tax }}</span>
+                    </div>
+                    <div class="border-t pt-3 flex justify-between font-bold text-gray-800 text-base">
+                        <span>Grand Total</span>
+                        <span class="text-purple-700">Rs. {{ cart.get_total }}</span>
+                    </div>
+                </div>
+
+                <a href="{% url 'esewa_checkout' %}"
+                    class="mt-6 flex items-center justify-center gap-2 w-full text-center bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold transition">
+                    <img src="https://esewa.com.np/common/images/esewa_logo.png" alt="eSewa" class="h-5">
+                    Pay with eSewa
+                </a>
+                <a href="{% url 'product_list' %}"
+                    class="mt-3 block w-full text-center border border-gray-300 text-gray-600 py-2.5 rounded-xl hover:bg-gray-50 transition text-sm">
+                    Continue Shopping
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    {% else %}
+    <div class="text-center py-24 text-gray-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        <p class="text-lg font-medium">Your cart is empty.</p>
+        <a href="{% url 'product_list' %}" class="mt-4 inline-block text-purple-600 hover:underline">
+            Browse products &rarr;
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

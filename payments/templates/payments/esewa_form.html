@@ -1,0 +1,53 @@
+{% extends 'accounts/base.html' %}
+{% block title %}Pay with eSewa{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 flex items-center justify-center p-8">
+    <div class="bg-white rounded-2xl shadow-lg w-full max-w-md p-8">
+
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">Complete Payment</h2>
+            <p class="text-gray-500 text-sm mt-1">You will be redirected to eSewa to complete your payment.</p>
+        </div>
+
+        <div class="bg-gray-50 rounded-xl p-4 mb-6 space-y-2 text-sm text-gray-600">
+            <div class="flex justify-between">
+                <span>Subtotal</span>
+                <span>Rs. {{ amount }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>VAT (13%)</span>
+                <span>Rs. {{ tax_amount }}</span>
+            </div>
+            <div class="flex justify-between font-bold text-gray-800 border-t pt-2">
+                <span>Total</span>
+                <span class="text-purple-700">Rs. {{ total_amount }}</span>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ payment_url }}">
+            <input type="hidden" name="amount" value="{{ amount }}">
+            <input type="hidden" name="tax_amount" value="{{ tax_amount }}">
+            <input type="hidden" name="total_amount" value="{{ total_amount }}">
+            <input type="hidden" name="transaction_uuid" value="{{ transaction_uuid }}">
+            <input type="hidden" name="product_code" value="{{ product_code }}">
+            <input type="hidden" name="product_service_charge" value="{{ product_service_charge }}">
+            <input type="hidden" name="product_delivery_charge" value="{{ product_delivery_charge }}">
+            <input type="hidden" name="success_url" value="{{ success_url }}">
+            <input type="hidden" name="failure_url" value="{{ failure_url }}">
+            <input type="hidden" name="signed_field_names" value="{{ signed_field_names }}">
+            <input type="hidden" name="signature" value="{{ signature }}">
+
+            <button type="submit"
+                class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition text-lg">
+                Pay with eSewa
+            </button>
+        </form>
+
+        <a href="{% url 'cart_detail' %}"
+            class="block text-center mt-4 text-sm text-gray-500 hover:text-gray-700">
+            &larr; Back to Cart
+        </a>
+    </div>
+</div>
+{% endblock %}

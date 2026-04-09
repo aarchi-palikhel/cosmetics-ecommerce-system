@@ -1,0 +1,82 @@
+{% extends 'accounts/base.html' %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-lg w-full max-w-sm p-8">
+
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-purple-500 to-purple-700 -mx-8 -mt-8 rounded-t-2xl px-8 py-6 mb-6 text-center">
+            <h2 class="text-white text-2xl font-semibold">User Login</h2>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <!-- Username -->
+            <div class="mb-4">
+                <label class="block text-sm text-gray-600 mb-1">Username or Email <span class="text-red-500">*</span></label>
+                {{ form.username }}
+                {% if form.non_field_errors %}
+                    <p class="text-red-500 text-xs mt-1">{{ form.non_field_errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Password -->
+            <div class="mb-2">
+                <label class="block text-sm text-gray-600 mb-1">Password <span class="text-red-500">*</span></label>
+                <div class="relative">
+                    {{ form.password }}
+                    <button id="toggle-password" type="button"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-purple-600 transition focus:outline-none">
+                        <!-- Eye open -->
+                        <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <!-- Eye off (hidden by default) -->
+                        <svg id="eye-off" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 012.163-3.592M6.53 6.533A9.97 9.97 0 0112 5c4.477 0 8.268 2.943 9.542 7a9.97 9.97 0 01-4.423 5.392M3 3l18 18" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-right mb-6">
+                <a href="#" class="text-xs text-purple-600 hover:underline">Forgot Password?</a>
+            </div>
+
+            <button type="submit"
+                class="w-full bg-gradient-to-r from-purple-500 to-purple-700 text-white py-3 rounded-lg font-semibold hover:opacity-90 transition">
+                Login
+            </button>
+        </form>
+
+        <div class="text-center mt-4 text-sm text-gray-500">
+            Don't have an account?<br>
+            <a href="{% url 'register' %}" class="inline-flex items-center gap-1 mt-1 border border-gray-300 px-4 py-1.5 rounded-lg hover:bg-gray-50 transition text-gray-700">
+                Register Now
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const toggleBtn = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('id_password');
+    const eyeOpen = document.getElementById('eye-open');
+    const eyeOff = document.getElementById('eye-off');
+
+    toggleBtn.addEventListener('click', function () {
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            eyeOpen.classList.add('hidden');
+            eyeOff.classList.remove('hidden');
+        } else {
+            passwordInput.type = 'password';
+            eyeOpen.classList.remove('hidden');
+            eyeOff.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}

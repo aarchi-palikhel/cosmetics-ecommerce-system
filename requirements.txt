@@ -1,0 +1,7 @@
+Django>=4.2
+mysqlclient>=2.1
+django-tailwind>=3.6
+pillow>=10.0
+mssql-django
+django-browser-reload
+requests
