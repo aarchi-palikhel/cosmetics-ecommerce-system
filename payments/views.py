@@ -112,7 +112,14 @@ def payment_success(request):
                 # Clear cart
                 cart = Cart.objects.filter(user=request.user).first()
                 if cart:
+                    # Capture items before deleting for email
+                    cart_items = list(cart.items.select_related('product').all())
                     cart.items.all().delete()
+
+                # Send order confirmation email
+                from mailer.email_utils import send_order_confirmation
+                send_order_confirmation(request.user, payment, cart_items)
+
                 return render(request, 'payments/success.html', {'payment': payment})
         except Exception:
             pass

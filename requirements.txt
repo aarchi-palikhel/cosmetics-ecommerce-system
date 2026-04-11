@@ -5,3 +5,4 @@ pillow>=10.0
 mssql-django
 django-browser-reload
 requests
+python-dotenv
