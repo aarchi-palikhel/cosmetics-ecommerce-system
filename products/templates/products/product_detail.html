@@ -46,14 +46,40 @@
 
                 <p class="text-gray-500 mt-4 leading-relaxed">{{ product.description|default:"No description available." }}</p>
 
+                <div class="mt-4">
+                    {% if not product.in_stock %}
+                    <span class="inline-block bg-red-100 text-red-600 text-xs font-semibold px-3 py-1 rounded-full">Out of Stock</span>
+                    {% elif product.low_stock %}
+                    <span class="inline-block bg-orange-100 text-orange-600 text-xs font-semibold px-3 py-1 rounded-full">Only {{ product.stock }} left!</span>
+                    {% else %}
+                    <span class="inline-block bg-green-100 text-green-600 text-xs font-semibold px-3 py-1 rounded-full">In Stock ({{ product.stock }})</span>
+                    {% endif %}
+                </div>
+
                 <form method="post" action="{% url 'cart_add' product.id %}" class="mt-6 flex items-center gap-3">
                     {% csrf_token %}
-                    <input type="number" name="quantity" value="1" min="1" max="99"
-                        class="w-20 text-center border border-gray-300 rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                    <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}"
+                        {% if not product.in_stock %}disabled{% endif %}
+                        class="w-20 text-center border border-gray-300 rounded-lg py-2 focus:outline-none focus:ring-2 focus:ring-purple-400
+                               {% if not product.in_stock %}bg-gray-100 text-gray-400{% endif %}">
                     <button type="submit"
-                        class="flex-1 bg-gradient-to-r from-purple-500 to-purple-700 text-white py-2.5 rounded-xl font-semibold hover:opacity-90 transition">
-                        + Add to Cart
+                        {% if not product.in_stock %}disabled{% endif %}
+                        class="flex-1 py-2.5 rounded-xl font-semibold transition
+                            {% if product.in_stock %}bg-gradient-to-r from-purple-500 to-purple-700 text-white hover:opacity-90{% else %}bg-gray-200 text-gray-400 cursor-not-allowed{% endif %}">
+                        {% if product.in_stock %}+ Add to Cart{% else %}Out of Stock{% endif %}
                     </button>
+                    {% if user.is_authenticated %}
+                    <button type="button" id="wishlist-btn"
+                        class="p-2.5 rounded-xl border transition hover:scale-110
+                               {% if in_wishlist %}border-pink-300 bg-pink-50 text-pink-500{% else %}border-gray-300 text-gray-400 hover:border-pink-300 hover:text-pink-500{% endif %}"
+                        data-product-id="{{ product.id }}"
+                        data-wishlisted="{{ in_wishlist|yesno:'true,false' }}"
+                        title="{% if in_wishlist %}Remove from wishlist{% else %}Save to wishlist{% endif %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    {% endif %}
                 </form>
             </div>
         </div>
@@ -171,5 +197,40 @@
             s.querySelector('svg').classList.toggle('text-gray-300', i > checkedIndex);
         });
     });
+</script>
+
+<script>
+(function () {
+    var btn = document.getElementById('wishlist-btn');
+    if (!btn) return;
+
+    btn.addEventListener('click', function () {
+        var productId = btn.dataset.productId;
+
+        fetch('/products/wishlist/toggle/' + productId + '/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+        })
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+            btn.dataset.wishlisted = data.in_wishlist ? 'true' : 'false';
+            btn.title = data.in_wishlist ? 'Remove from wishlist' : 'Save to wishlist';
+            if (data.in_wishlist) {
+                btn.classList.add('border-pink-300', 'bg-pink-50', 'text-pink-500');
+                btn.classList.remove('border-gray-300', 'text-gray-400');
+            } else {
+                btn.classList.remove('border-pink-300', 'bg-pink-50', 'text-pink-500');
+                btn.classList.add('border-gray-300', 'text-gray-400');
+            }
+            showToast(data.in_wishlist ? 'Saved to wishlist ♥' : 'Removed from wishlist', data.in_wishlist ? 'success' : 'info');
+        })
+        .catch(function () {
+            showToast('Could not update wishlist.', 'error');
+        });
+    });
+})();
 </script>
 {% endblock %}

@@ -22,17 +22,29 @@ def cart_detail(request):
 @login_required
 def cart_add(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    cart = get_or_create_cart(request)
     quantity = int(request.POST.get('quantity', 1))
 
+    # Stock check
+    if not product.in_stock:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': f'"{product.name}" is out of stock.'})
+        messages.error(request, f'"{product.name}" is out of stock.')
+        return redirect(request.POST.get('next', 'product_list'))
+
+    cart = get_or_create_cart(request)
     item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-    if not created:
-        item.quantity += quantity
-    else:
-        item.quantity = quantity
+    new_quantity = quantity if created else item.quantity + quantity
+
+    # Don't allow adding more than available stock
+    if new_quantity > product.stock:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'message': f'Only {product.stock} unit(s) available.'})
+        messages.error(request, f'Only {product.stock} unit(s) of "{product.name}" available.')
+        return redirect(request.POST.get('next', 'product_list'))
+
+    item.quantity = new_quantity
     item.save()
 
-    # AJAX request — return JSON instead of redirecting
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({
             'success': True,

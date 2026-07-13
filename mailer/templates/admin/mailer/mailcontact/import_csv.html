@@ -1,0 +1,13 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>Import Contacts from CSV</h1>
+<p>CSV must have columns: <strong>Name, EmailID, Location, Gender</strong></p>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div style="margin:20px 0">
+        <input type="file" name="csv_file" accept=".csv" required>
+    </div>
+    <input type="submit" value="Import" class="default">
+    <a href="../" style="margin-left:10px">Cancel</a>
+</form>
+{% endblock %}

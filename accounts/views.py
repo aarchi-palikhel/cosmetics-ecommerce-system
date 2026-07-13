@@ -7,12 +7,20 @@ from .forms import RegistrationForm, LoginForm, ProfileForm
 
 def home_view(request):
     featured_products = []
+    wishlist_ids = set()
     try:
-        from products.models import Product
+        from products.models import Product, Wishlist
         featured_products = Product.objects.filter(is_featured=True).select_related('category')[:8]
+        if request.user.is_authenticated:
+            wishlist_ids = set(
+                Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+            )
     except Exception:
         pass
-    return render(request, 'accounts/home.html', {'featured_products': featured_products})
+    return render(request, 'accounts/home.html', {
+        'featured_products': featured_products,
+        'wishlist_ids': wishlist_ids,
+    })
 
 
 def register_view(request):
@@ -46,7 +54,8 @@ def login_view(request):
 
 
 def logout_view(request):
-    logout(request)
+    if request.method == 'POST':
+        logout(request)
     return redirect('home')
 
 

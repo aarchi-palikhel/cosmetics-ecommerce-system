@@ -20,10 +20,19 @@ class Product(models.Model):
     description = models.TextField(blank=True)
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     is_featured = models.BooleanField(default=False)
+    stock = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
+    @property
+    def in_stock(self):
+        return self.stock > 0
+
+    @property
+    def low_stock(self):
+        return 0 < self.stock <= 5
 
     def average_rating(self):
         reviews = self.reviews.all()
@@ -45,8 +54,21 @@ class Review(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('product', 'user')  # one review per user per product
+        unique_together = ('product', 'user')
         ordering = ['-timestamp']
 
     def __str__(self):
         return f"{self.user.username} - {self.product.name} ({self.rating}/5)"
+
+
+class Wishlist(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wishlist_items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='wishlisted_by')
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'product')
+        ordering = ['-added_at']
+
+    def __str__(self):
+        return f"{self.user.username} → {self.product.name}"

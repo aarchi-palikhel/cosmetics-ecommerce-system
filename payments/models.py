@@ -8,6 +8,7 @@ class Payment(models.Model):
         ('PENDING', 'Pending'),
         ('COMPLETE', 'Complete'),
         ('FAILED', 'Failed'),
+        ('CANCELLED', 'Cancelled'),
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -21,3 +22,14 @@ class Payment(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.total_amount} - {self.status}"
+
+
+class OrderItem(models.Model):
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='items')
+    product_name = models.CharField(max_length=200)
+    product_price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField()
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product_name}"

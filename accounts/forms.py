@@ -25,6 +25,8 @@ class RegistrationForm(UserCreationForm):
 class LoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['username'].label = 'Username or Email'
+        self.fields['username'].widget.attrs['placeholder'] = 'Enter username or email'
         for field in self.fields.values():
             field.widget.attrs['class'] = (
                 'w-full px-4 py-2 border border-gray-300 rounded-lg '

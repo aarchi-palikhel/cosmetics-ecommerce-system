@@ -2,20 +2,23 @@ from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
 
 
-def send_order_confirmation(user, payment, cart_items):
+def send_order_confirmation(user, payment, order_items):
     salutation = 'Mr.' if user.first_name else ''
 
-    # Build items table rows
     items_html = ''
     items_text = ''
-    for item in cart_items:
-        subtotal = item.product.price * item.quantity
+    for item in order_items:
+        # Supports both OrderItem (product_name/product_price) and CartItem (product.name/product.price)
+        name = getattr(item, 'product_name', None) or item.product.name
+        price = getattr(item, 'product_price', None) or item.product.price
+        qty = item.quantity
+        sub = getattr(item, 'subtotal', None) or (price * qty)
         items_html += f"""
         <tr>
-            <td style="padding:10px;border-bottom:1px solid #F3F4F6;color:#374151;">{item.product.name}</td>
-            <td style="padding:10px;border-bottom:1px solid #F3F4F6;color:#374151;text-align:center;">{item.quantity}</td>
-            <td style="padding:10px;border-bottom:1px solid #F3F4F6;color:#374151;text-align:right;">Rs. {item.product.price}</td>
-            <td style="padding:10px;border-bottom:1px solid #F3F4F6;color:#7C3AED;font-weight:bold;text-align:right;">Rs. {subtotal}</td>
+            <td style="padding:10px;border-bottom:1px solid #F3F4F6;color:#374151;">{name}</td>
+            <td style="padding:10px;border-bottom:1px solid #F3F4F6;color:#374151;text-align:center;">{qty}</td>
+            <td style="padding:10px;border-bottom:1px solid #F3F4F6;color:#374151;text-align:right;">Rs. {price}</td>
+            <td style="padding:10px;border-bottom:1px solid #F3F4F6;color:#7C3AED;font-weight:bold;text-align:right;">Rs. {sub}</td>
         </tr>
         """
         items_text += f"  - {item.product.name} x{item.quantity} — Rs. {subtotal}\n"

@@ -4,33 +4,22 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
+from .models import MailContact
 
 
 def is_admin(user):
     return user.is_authenticated and (user.is_staff or user.is_superuser)
 
 
-def read_csv():
-    contacts = []
-    try:
-        with open(settings.EMAIL_CSV_PATH, newline='', encoding='utf-8-sig') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                contacts.append({
-                    'name': row['Name'].strip(),
-                    'location': row['Location'].strip(),
-                    'email': row['EmailID'].strip(),
-                    'gender': row['Gender'].strip(),
-                    'salutation': 'Mr.' if row['Gender'].strip().lower() == 'male' else 'Ms.',
-                })
-    except FileNotFoundError:
-        pass
-    return contacts
-
-
 @user_passes_test(is_admin, login_url='home')
 def compose(request):
-    contacts = read_csv()
+    contacts = list(
+        MailContact.objects.values('name', 'email', 'location', 'gender')
+    )
+    # Add salutation to each contact dict
+    for c in contacts:
+        c['salutation'] = 'Mr.' if c['gender'] == 'male' else 'Ms.'
+
     preview = contacts[0] if contacts else None
 
     if request.method == 'POST':

@@ -1,8 +1,27 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Product, Category, Review
+from django.http import JsonResponse
+from .models import Product, Category, Review, Wishlist
 from .forms import ReviewForm
+
+
+def product_search_suggestions(request):
+    q = request.GET.get('q', '').strip()
+    results = []
+    if len(q) >= 2:
+        products = Product.objects.filter(name__icontains=q).select_related('category')[:6]
+        results = [
+            {
+                'id': p.id,
+                'name': p.name,
+                'category': p.category.name if p.category else '',
+                'price': str(p.price),
+                'image': p.image.url if p.image else None,
+            }
+            for p in products
+        ]
+    return JsonResponse({'results': results})
 
 
 def product_list(request):
@@ -17,11 +36,18 @@ def product_list(request):
     if category_id:
         products = products.filter(category__id=category_id)
 
+    wishlist_ids = set()
+    if request.user.is_authenticated:
+        wishlist_ids = set(
+            Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+        )
+
     return render(request, 'products/product_list.html', {
         'products': products,
         'categories': categories,
         'query': query,
         'selected_category': category_id,
+        'wishlist_ids': wishlist_ids,
     })
 
 
@@ -29,9 +55,11 @@ def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
     reviews = product.reviews.select_related('user').all()
     user_review = None
+    in_wishlist = False
 
     if request.user.is_authenticated:
         user_review = Review.objects.filter(product=product, user=request.user).first()
+        in_wishlist = Wishlist.objects.filter(user=request.user, product=product).exists()
 
     form = ReviewForm()
 
@@ -56,4 +84,28 @@ def product_detail(request, pk):
         'reviews': reviews,
         'form': form,
         'user_review': user_review,
+        'in_wishlist': in_wishlist,
     })
+
+
+@login_required
+def wishlist_toggle(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    item, created = Wishlist.objects.get_or_create(user=request.user, product=product)
+
+    if not created:
+        item.delete()
+        in_wishlist = False
+    else:
+        in_wishlist = True
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'in_wishlist': in_wishlist})
+
+    return redirect(request.META.get('HTTP_REFERER', 'product_list'))
+
+
+@login_required
+def wishlist_page(request):
+    items = Wishlist.objects.filter(user=request.user).select_related('product', 'product__category')
+    return render(request, 'products/wishlist.html', {'items': items})
