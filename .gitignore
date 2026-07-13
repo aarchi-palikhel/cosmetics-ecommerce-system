@@ -1,15 +1,54 @@
 # Python
 *.pyc
+*.pyo
+*.pyd
 __pycache__/
+*.py[cod]
 
-# Django / SQLite
+# Django 
 db.sqlite3
-/media/
 *.log
+local_settings.py
 
-# Environment
-venv/
+# Media uploads (user-generated content) 
+/media/
+
+# Static files (collected by collectstatic) 
+/staticfiles/
+/static_root/
+
+# Environment & secrets 
 .env
+.env.*
+!.env.example
 
-# Customer data
+# Virtual environments 
+venv/
+.venv/
+env/
+ENV/
+
+# IDE & editor 
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated 
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Pytest / coverage 
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Build & packaging 
+dist/
+build/
+*.egg-info/
+
+# Customer Data
 email.csv

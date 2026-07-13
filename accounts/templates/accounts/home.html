@@ -2,47 +2,164 @@
 {% block title %}Glamour - Cosmetics Store{% endblock %}
 
 {% block content %}
+
+<style>
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50%       { transform: translateY(-10px); }
+    }
+    @keyframes shimmer {
+        0%   { background-position: -400px 0; }
+        100% { background-position: 400px 0; }
+    }
+    @keyframes pulseBadge {
+        0%, 100% { transform: scale(1); }
+        50%       { transform: scale(1.08); }
+    }
+    @keyframes gradientShift {
+        0%   { background-position: 0% 50%; }
+        50%  { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50%       { opacity: 0; }
+    }
+
+    .hero-section {
+        background: linear-gradient(135deg, #7c3aed, #a855f7, #ec4899, #f472b6);
+        background-size: 300% 300%;
+        animation: gradientShift 8s ease infinite;
+    }
+
+    .typewriter-cursor::after {
+        content: '|';
+        display: inline-block;
+        margin-left: 2px;
+        animation: blink 0.75s step-end infinite;
+        color: rgba(255,255,255,0.85);
+    }
+
+    .product-card {
+        opacity: 0;
+        transform: translateY(24px);
+        transition: opacity 0.5s ease, transform 0.5s ease, box-shadow 0.3s ease;
+    }
+    .product-card.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .product-card:hover {
+        box-shadow: 0 20px 40px rgba(124,58,237,0.15);
+        transform: translateY(-4px);
+    }
+    .product-card img {
+        transition: transform 0.4s ease;
+    }
+    .product-card:hover img {
+        transform: scale(1.07);
+    }
+
+    .add-cart-btn {
+        position: relative;
+        overflow: hidden;
+        transition: background 0.2s, transform 0.15s;
+    }
+    .add-cart-btn::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+        background-size: 400px 100%;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    .add-cart-btn:hover::after {
+        opacity: 1;
+        animation: shimmer 0.8s ease;
+    }
+    .add-cart-btn:active {
+        transform: scale(0.96);
+    }
+</style>
+
 <div class="min-h-screen bg-gray-50">
 
-    <!-- Hero -->
-    <section class="bg-gradient-to-br from-purple-600 to-pink-400 text-white py-24 px-6 text-center">
-        <h1 class="text-5xl font-bold mb-4">Beauty, Redefined.</h1>
-        <p class="text-lg text-purple-100 mb-8 max-w-xl mx-auto">
-            Discover premium cosmetics crafted for every skin type. Look good, feel great.
-        </p>
-        <a href="{% url 'product_list' %}"
-            class="bg-white text-purple-700 font-semibold px-8 py-3 rounded-full hover:bg-purple-50 transition shadow">
-            Shop Now
-        </a>
+    <section class="hero-section relative text-white py-10 px-6 text-center overflow-hidden">
+
+        <div class="absolute w-72 h-72 bg-pink-300 rounded-full blur-3xl opacity-30 pointer-events-none top-[-60px] left-[-60px]"
+             style="animation: float 4s ease-in-out infinite; animation-delay: 0s"></div>
+        <div class="absolute w-56 h-56 bg-purple-300 rounded-full blur-3xl opacity-30 pointer-events-none bottom-[-40px] right-[-40px]"
+             style="animation: float 4s ease-in-out infinite; animation-delay: 1.5s"></div>
+        <div class="absolute w-40 h-40 bg-white rounded-full blur-3xl opacity-20 pointer-events-none top-1/2 left-1/3"
+             style="animation: float 5s ease-in-out infinite; animation-delay: 0.8s"></div>
+
+        <div class="relative z-10">
+            <span class="inline-block bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-4 py-1.5 rounded-full mb-5 tracking-widest uppercase ring-1 ring-white/30"
+                  style="animation: fadeUp 0.8s 0.4s ease both, pulseBadge 3s 1.5s ease-in-out infinite; opacity: 0">
+                ✨ Premium Cosmetics
+            </span>
+
+            <h1 id="hero-title"
+                class="typewriter-cursor text-5xl sm:text-6xl font-extrabold mb-4 leading-tight drop-shadow-sm"
+                style="opacity: 0; min-height: 1.2em"></h1>
+
+            <p id="hero-sub"
+               class="text-lg text-purple-100 mb-10 max-w-xl mx-auto leading-relaxed"
+               style="opacity: 0; min-height: 1.6em"></p>
+
+            <a href="{% url 'product_list' %}"
+               class="inline-block bg-white text-purple-700 font-bold px-10 py-3.5 rounded-full shadow-lg transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl active:scale-95"
+               style="animation: fadeUp 0.8s 0.4s ease both; opacity: 0">
+                Shop Now &rarr;
+            </a>
+        </div>
     </section>
 
-    <!-- Featured Products -->
     <section class="max-w-6xl mx-auto px-6 py-16">
-        <h2 class="text-2xl font-bold text-gray-800 mb-8 text-center">Featured Products</h2>
+
+        <div class="text-center mb-10">
+            <h2 class="text-3xl font-bold text-gray-800 inline-block"
+                style="animation: fadeUp 0.7s ease both; opacity: 0">
+                Featured Products
+            </h2>
+            <div class="mt-2 mx-auto w-16 h-1 bg-gradient-to-r from-purple-500 to-pink-400 rounded-full"
+                 style="animation: fadeIn 0.8s 0.3s ease both; opacity: 0"></div>
+        </div>
 
         {% if featured_products %}
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {% for product in featured_products %}
-            <div class="bg-white rounded-2xl shadow hover:shadow-lg transition overflow-hidden group">
-                <a href="{% url 'product_detail' product.pk %}">
-                {% if product.image %}
-                    <img src="{{ product.image.url }}" alt="{{ product.name }}"
-                        class="w-full h-48 object-cover group-hover:scale-105 transition duration-300">
-                {% else %}
-                    <div class="w-full h-48 bg-purple-50 flex items-center justify-center">
-                        <img src="https://placehold.co/400x300?text=No+Image" alt="No image" class="h-full w-full object-cover opacity-50">
-                    </div>
-                {% endif %}
+            <div class="product-card bg-white rounded-2xl shadow overflow-hidden group"
+                 style="transition-delay: {{ forloop.counter0 }}00ms">
+                <a href="{% url 'product_detail' product.pk %}" class="block overflow-hidden">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-48 object-cover">
+                    {% else %}
+                        <div class="w-full h-48 bg-purple-50 flex items-center justify-center">
+                            <img src="https://placehold.co/400x300?text=No+Image" alt="No image" class="h-full w-full object-cover opacity-50">
+                        </div>
+                    {% endif %}
                 </a>
                 <div class="p-4">
-                    <span class="text-xs text-purple-500 font-medium uppercase tracking-wide">
+                    <span class="text-xs text-purple-500 font-semibold uppercase tracking-wide">
                         {{ product.category.name|default:"Uncategorized" }}
                     </span>
                     <h3 class="text-gray-800 font-semibold mt-1 truncate">{{ product.name }}</h3>
                     <div class="flex items-center gap-1 mt-2">
                         {% with avg=product.average_rating %}
                         {% for i in "12345" %}
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 {% if avg and forloop.counter <= avg %}text-yellow-400{% else %}text-gray-200{% endif %}" viewBox="0 0 20 20" fill="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 class="h-4 w-4 {% if avg and forloop.counter <= avg %}text-yellow-400{% else %}text-gray-200{% endif %}"
+                                 viewBox="0 0 20 20" fill="currentColor">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                             </svg>
                         {% endfor %}
@@ -55,7 +172,7 @@
                         <input type="hidden" name="quantity" value="1">
                         <input type="hidden" name="next" value="{{ request.path }}">
                         <button type="submit"
-                            class="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 rounded-lg transition">
+                            class="add-cart-btn w-full bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 rounded-lg font-medium">
                             + Add to Cart
                         </button>
                     </form>
@@ -63,8 +180,9 @@
             </div>
             {% endfor %}
         </div>
+
         {% else %}
-        <div class="text-center py-16 text-gray-400">
+        <div class="text-center py-16 text-gray-400" style="animation: fadeUp 0.7s ease both">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
@@ -75,9 +193,9 @@
         </div>
         {% endif %}
 
-        <div class="text-center mt-10">
+        <div class="text-center mt-12">
             <a href="{% url 'product_list' %}"
-                class="border border-purple-600 text-purple-700 px-6 py-3 rounded-lg hover:bg-purple-50 transition font-medium">
+                class="inline-block border-2 border-purple-600 text-purple-700 px-8 py-3 rounded-xl font-semibold transition-all duration-200 hover:bg-purple-600 hover:text-white hover:-translate-y-0.5 hover:shadow-lg">
                 View All Products
             </a>
         </div>
@@ -88,4 +206,53 @@
     </footer>
 
 </div>
+
+<script>
+(function () {
+    function typewrite(el, text, speed, onDone) {
+        el.style.opacity = '1';
+        var i = 0;
+        function tick() {
+            el.textContent = text.slice(0, i);
+            i++;
+            if (i <= text.length) {
+                setTimeout(tick, speed);
+            } else if (onDone) {
+                onDone();
+            }
+        }
+        tick();
+    }
+
+    var title = document.getElementById('hero-title');
+    var sub   = document.getElementById('hero-sub');
+
+    setTimeout(function () {
+        typewrite(title, 'Beauty, Redefined.', 60, function () {
+            title.classList.remove('typewriter-cursor');
+            setTimeout(function () {
+                sub.classList.add('typewriter-cursor');
+                typewrite(sub, 'Discover premium cosmetics crafted for every skin type. Look good, feel great.', 28, function () {
+                    sub.classList.remove('typewriter-cursor');
+                });
+            }, 200);
+        });
+    }, 600);
+
+    var cards = document.querySelectorAll('.product-card');
+    if (!cards.length) return;
+
+    var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.12 });
+
+    cards.forEach(function (card) { observer.observe(card); });
+})();
+</script>
+
 {% endblock %}
