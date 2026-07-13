@@ -52,4 +52,25 @@ def logout_view(request):
 
 @login_required
 def dashboard_view(request):
-    return render(request, 'accounts/dashboard.html')
+    from cart.models import Cart
+    from payments.models import Payment
+    from products.models import Review
+
+    cart = Cart.objects.filter(user=request.user).first()
+    cart_items_count = cart.get_total_items() if cart else 0
+
+    total_orders = Payment.objects.filter(user=request.user, status='COMPLETE').count()
+    total_spent = Payment.objects.filter(user=request.user, status='COMPLETE').values_list('total_amount', flat=True)
+    total_spent = sum(total_spent)
+
+    total_reviews = Review.objects.filter(user=request.user).count()
+
+    recent_orders = Payment.objects.filter(user=request.user).order_by('-created_at')[:5]
+
+    return render(request, 'accounts/dashboard.html', {
+        'cart_items_count': cart_items_count,
+        'total_orders': total_orders,
+        'total_spent': total_spent,
+        'total_reviews': total_reviews,
+        'recent_orders': recent_orders,
+    })

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import JsonResponse
 from products.models import Product
 from .models import Cart, CartItem
 
@@ -31,6 +32,14 @@ def cart_add(request, product_id):
         item.quantity = quantity
     item.save()
 
+    # AJAX request — return JSON instead of redirecting
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'success': True,
+            'message': f'"{product.name}" added to cart.',
+            'cart_count': cart.get_total_items(),
+        })
+
     messages.success(request, f'"{product.name}" added to cart.')
     return redirect(request.POST.get('next', 'product_list'))
 
@@ -39,12 +48,31 @@ def cart_add(request, product_id):
 @login_required
 def cart_update(request, item_id):
     item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    cart = item.cart
     quantity = int(request.POST.get('quantity', 1))
+    removed = False
+
     if quantity > 0:
         item.quantity = quantity
         item.save()
+        item_subtotal = str(item.get_subtotal())
     else:
         item.delete()
+        item_subtotal = '0'
+        removed = True
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        cart.refresh_from_db()
+        return JsonResponse({
+            'success': True,
+            'item_subtotal': item_subtotal,
+            'cart_subtotal': str(cart.get_subtotal()),
+            'cart_tax': str(cart.get_tax()),
+            'cart_total': str(cart.get_total()),
+            'cart_count': cart.get_total_items(),
+            'removed': removed,
+        })
+
     return redirect('cart_detail')
 
 
@@ -52,6 +80,20 @@ def cart_update(request, item_id):
 @login_required
 def cart_remove(request, item_id):
     item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    cart = item.cart
+    product_name = item.product.name
     item.delete()
-    messages.success(request, f'"{item.product.name}" removed from cart.')
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        cart.refresh_from_db()
+        return JsonResponse({
+            'success': True,
+            'message': f'"{product_name}" removed from cart.',
+            'cart_subtotal': str(cart.get_subtotal()),
+            'cart_tax': str(cart.get_tax()),
+            'cart_total': str(cart.get_total()),
+            'cart_count': cart.get_total_items(),
+        })
+
+    messages.success(request, f'"{product_name}" removed from cart.')
     return redirect('cart_detail')

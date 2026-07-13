@@ -7,12 +7,12 @@
     <h1 class="text-2xl font-bold text-gray-800 mb-6">Shopping Cart</h1>
 
     {% if cart.items.all %}
-    <div class="flex flex-col lg:flex-row gap-8">
+    <div id="cart-wrapper" class="flex flex-col lg:flex-row gap-8">
 
         <!-- Cart Items -->
-        <div class="flex-1 space-y-4">
+        <div id="cart-items" class="flex-1 space-y-4">
             {% for item in cart.items.all %}
-            <div class="bg-white rounded-2xl shadow p-4 flex items-center gap-4">
+            <div id="cart-item-{{ item.id }}" class="bg-white rounded-2xl shadow p-4 flex items-center gap-4">
 
                 <!-- Image -->
                 <div class="w-20 h-20 rounded-xl overflow-hidden bg-purple-50 flex-shrink-0">
@@ -31,7 +31,10 @@
                 </div>
 
                 <!-- Quantity -->
-                <form method="post" action="{% url 'cart_update' item.id %}" class="flex items-center gap-2">
+                <form class="cart-update-form flex items-center gap-2"
+                      data-item-id="{{ item.id }}"
+                      action="{% url 'cart_update' item.id %}"
+                      method="post">
                     {% csrf_token %}
                     <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="99"
                         class="w-16 text-center border border-gray-300 rounded-lg py-1.5 focus:outline-none focus:ring-2 focus:ring-purple-400">
@@ -43,11 +46,14 @@
 
                 <!-- Subtotal -->
                 <div class="text-right min-w-[90px]">
-                    <p class="font-bold text-purple-700">Rs. {{ item.get_subtotal }}</p>
+                    <p id="subtotal-{{ item.id }}" class="font-bold text-purple-700">Rs. {{ item.get_subtotal }}</p>
                 </div>
 
                 <!-- Remove -->
-                <form method="post" action="{% url 'cart_remove' item.id %}">
+                <form class="cart-remove-form"
+                      data-item-id="{{ item.id }}"
+                      action="{% url 'cart_remove' item.id %}"
+                      method="post">
                     {% csrf_token %}
                     <button type="submit" class="text-red-400 hover:text-red-600 transition" title="Remove">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -68,15 +74,15 @@
                 <div class="space-y-3 text-sm text-gray-600">
                     <div class="flex justify-between">
                         <span>Subtotal</span>
-                        <span>Rs. {{ cart.get_subtotal }}</span>
+                        <span id="summary-subtotal">Rs. {{ cart.get_subtotal }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span>VAT (13%)</span>
-                        <span>Rs. {{ cart.get_tax }}</span>
+                        <span id="summary-tax">Rs. {{ cart.get_tax }}</span>
                     </div>
                     <div class="border-t pt-3 flex justify-between font-bold text-gray-800 text-base">
                         <span>Grand Total</span>
-                        <span class="text-purple-700">Rs. {{ cart.get_total }}</span>
+                        <span id="summary-total" class="text-purple-700">Rs. {{ cart.get_total }}</span>
                     </div>
                 </div>
 
@@ -94,6 +100,17 @@
 
     </div>
 
+    <!-- Empty state (hidden until all items removed) -->
+    <div id="cart-empty" class="hidden text-center py-24 text-gray-400">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        <p class="text-lg font-medium">Your cart is empty.</p>
+        <a href="{% url 'product_list' %}" class="mt-4 inline-block text-purple-600 hover:underline">
+            Browse products &rarr;
+        </a>
+    </div>
+
     {% else %}
     <div class="text-center py-24 text-gray-400">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-20 w-20 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -107,4 +124,117 @@
     {% endif %}
 
 </div>
+
+<script>
+(function () {
+    // ── Shared helpers ──────────────────────────────────────────
+    function getCsrf(form) {
+        return form.querySelector('[name=csrfmiddlewaretoken]').value;
+    }
+
+    function updateSummary(data) {
+        var sub = document.getElementById('summary-subtotal');
+        var tax = document.getElementById('summary-tax');
+        var tot = document.getElementById('summary-total');
+        if (sub) sub.textContent = 'Rs. ' + data.cart_subtotal;
+        if (tax) tax.textContent = 'Rs. ' + data.cart_tax;
+        if (tot) tot.textContent = 'Rs. ' + data.cart_total;
+
+        // Update sidebar badge
+        var badges = document.querySelectorAll('.cart-count-badge');
+        badges.forEach(function (b) {
+            b.textContent = data.cart_count;
+            b.classList.toggle('hidden', data.cart_count === 0);
+        });
+    }
+
+    function removeRow(itemId) {
+        var row = document.getElementById('cart-item-' + itemId);
+        if (!row) return;
+        row.style.transition = 'opacity 0.3s, transform 0.3s';
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(30px)';
+        setTimeout(function () {
+            row.remove();
+            // If no rows left, swap to empty state
+            var remaining = document.querySelectorAll('#cart-items [id^="cart-item-"]');
+            if (remaining.length === 0) {
+                var wrapper = document.getElementById('cart-wrapper');
+                var empty   = document.getElementById('cart-empty');
+                if (wrapper) wrapper.classList.add('hidden');
+                if (empty)   empty.classList.remove('hidden');
+            }
+        }, 300);
+    }
+
+    // ── Remove ──────────────────────────────────────────────────
+    document.querySelectorAll('.cart-remove-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var itemId = form.dataset.itemId;
+            var btn = form.querySelector('button[type="submit"]');
+            if (btn) btn.disabled = true;
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: new FormData(form),
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    removeRow(itemId);
+                    updateSummary(data);
+                    showToast(data.message, 'success');
+                } else {
+                    showToast('Could not remove item.', 'error');
+                    if (btn) btn.disabled = false;
+                }
+            })
+            .catch(function () {
+                showToast('Something went wrong.', 'error');
+                if (btn) btn.disabled = false;
+            });
+        });
+    });
+
+    // ── Update quantity ─────────────────────────────────────────
+    document.querySelectorAll('.cart-update-form').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var itemId = form.dataset.itemId;
+            var btn = form.querySelector('button[type="submit"]');
+            var originalText = btn ? btn.textContent : '';
+            if (btn) { btn.disabled = true; btn.textContent = '…'; }
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: new FormData(form),
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (data.success) {
+                    if (data.removed) {
+                        removeRow(itemId);
+                    } else {
+                        var subtotalEl = document.getElementById('subtotal-' + itemId);
+                        if (subtotalEl) subtotalEl.textContent = 'Rs. ' + data.item_subtotal;
+                        showToast('Cart updated.', 'success');
+                    }
+                    updateSummary(data);
+                } else {
+                    showToast('Could not update cart.', 'error');
+                }
+            })
+            .catch(function () {
+                showToast('Something went wrong.', 'error');
+            })
+            .finally(function () {
+                if (btn) { btn.disabled = false; btn.textContent = originalText; }
+            });
+        });
+    });
+})();
+</script>
 {% endblock %}

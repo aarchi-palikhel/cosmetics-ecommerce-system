@@ -3,26 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Glamour{% endblock %}</title>
+    <title>{% block title %}Glamour - Cosmetics Store{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
 {% if messages %}
-<div class="fixed top-4 right-4 z-50 space-y-2">
+<div id="flash-messages" class="fixed top-4 right-4 z-50 space-y-2">
     {% for message in messages %}
-    <div class="px-4 py-3 rounded-lg shadow text-white
+    <div class="flash-msg px-4 py-3 rounded-lg shadow text-white flex items-center justify-between gap-4 transition-opacity duration-500
         {% if message.tags == 'success' %}bg-green-500
         {% elif message.tags == 'error' %}bg-red-500
         {% else %}bg-blue-500{% endif %}">
-        {{ message }}
+        <span>{{ message }}</span>
+        <button onclick="this.parentElement.remove()" class="text-white opacity-70 hover:opacity-100 text-lg leading-none">&times;</button>
     </div>
     {% endfor %}
 </div>
+<script>
+    (function () {
+        function dismissFlash() {
+            var msgs = document.querySelectorAll('.flash-msg');
+            msgs.forEach(function (el) {
+                el.style.opacity = '0';
+                setTimeout(function () { el.remove(); }, 500);
+            });
+        }
+        setTimeout(dismissFlash, 10000);
+    })();
+</script>
 {% endif %}
+
+<!-- AJAX toast container (used by add-to-cart JS) -->
+<div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2 pointer-events-none"></div>
+
+<script>
+// ── Toast helper ──────────────────────────────────────────────
+function showToast(message, type) {
+    var colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-blue-500' };
+    var bg = colors[type] || colors.info;
+
+    var toast = document.createElement('div');
+    toast.className = 'flash-msg pointer-events-auto px-4 py-3 rounded-lg shadow text-white flex items-center justify-between gap-4 transition-opacity duration-500 ' + bg;
+    toast.innerHTML = '<span>' + message + '</span>'
+        + '<button class="text-white opacity-70 hover:opacity-100 text-lg leading-none" onclick="this.parentElement.remove()">&times;</button>';
+
+    var container = document.getElementById('toast-container');
+    container.appendChild(toast);
+
+    setTimeout(function () {
+        toast.style.opacity = '0';
+        setTimeout(function () { toast.remove(); }, 500);
+    }, 10000);
+}
+
+// ── Add-to-cart AJAX intercept ────────────────────────────────
+document.addEventListener('submit', function (e) {
+    var form = e.target;
+    // Only intercept forms that POST to a cart_add URL (contains /cart/add/)
+    if (!form.action || !form.action.includes('/cart/add/')) return;
+
+    e.preventDefault();
+
+    var btn = form.querySelector('button[type="submit"]');
+    var originalText = btn ? btn.textContent : null;
+    if (btn) { btn.disabled = true; btn.textContent = 'Adding…'; }
+
+    var formData = new FormData(form);
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData,
+    })
+    .then(function (res) {
+        if (res.status === 302 || res.redirected) {
+            // Not logged in — redirect to login
+            window.location.href = res.url;
+            return null;
+        }
+        return res.json();
+    })
+    .then(function (data) {
+        if (!data) return;
+        if (data.success) {
+            showToast(data.message, 'success');
+            // Update all sidebar cart count badges
+            var badges = document.querySelectorAll('.cart-count-badge');
+            badges.forEach(function (b) {
+                b.textContent = data.cart_count;
+                b.classList.toggle('hidden', data.cart_count === 0);
+            });
+        } else {
+            showToast(data.message || 'Something went wrong.', 'error');
+        }
+    })
+    .catch(function () {
+        showToast('Could not add to cart. Please try again.', 'error');
+    })
+    .finally(function () {
+        if (btn) { btn.disabled = false; btn.textContent = originalText; }
+    });
+});
+</script>
 
 <div class="flex min-h-screen">
 
+    {% block sidebar %}
     <!-- Sidebar -->
     <aside class="w-64 bg-white shadow-lg flex flex-col fixed top-0 left-0 h-full z-40">
 
@@ -61,9 +148,11 @@
                 </svg>
                 Cart
                 {% if cart and cart.get_total_items > 0 %}
-                <span class="ml-auto bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                <span class="cart-count-badge ml-auto bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                     {{ cart.get_total_items }}
                 </span>
+                {% else %}
+                <span class="cart-count-badge ml-auto bg-purple-600 text-white text-xs font-bold px-2 py-0.5 rounded-full hidden">0</span>
                 {% endif %}
             </a>
 
@@ -120,9 +209,10 @@
         </div>
 
     </aside>
+    {% endblock sidebar %}
 
     <!-- Main Content -->
-    <main class="ml-64 flex-1 min-h-screen">
+    <main class="{% block main_class %}ml-64{% endblock %} flex-1 min-h-screen">
         {% block content %}{% endblock %}
     </main>
 
