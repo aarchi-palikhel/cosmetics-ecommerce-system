@@ -26,7 +26,15 @@ class Payment(models.Model):
 
 class OrderItem(models.Model):
     payment = models.ForeignKey(Payment, on_delete=models.CASCADE, related_name='items')
-    product_name = models.CharField(max_length=200)
+    # SET_NULL so order history survives even if the product is later deleted.
+    product = models.ForeignKey(
+        'products.Product',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='order_items',
+    )
+    product_name = models.CharField(max_length=200)    
     product_price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField()
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)

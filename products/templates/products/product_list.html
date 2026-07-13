@@ -8,8 +8,9 @@
         <!-- Page Title -->
         <h1 class="text-3xl font-bold text-gray-800 mb-6">Cosmetics Products</h1>
 
-        <!-- Search & Filter -->
-        <form method="get" class="flex flex-col sm:flex-row gap-3 mb-8">
+        <!-- Search, Filter & Sort -->
+        <form method="get" class="flex flex-col sm:flex-row gap-3 mb-6" id="filter-form">
+            <!-- Search input -->
             <div class="relative flex-1">
                 <input
                     type="text"
@@ -24,6 +25,8 @@
                     class="absolute z-50 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg mt-1 hidden overflow-hidden">
                 </ul>
             </div>
+
+            <!-- Category filter -->
             <select name="category"
                 class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
                 <option value="">All Categories</option>
@@ -33,11 +36,22 @@
                     </option>
                 {% endfor %}
             </select>
+
+            <!-- Sort dropdown -->
+            <select name="sort"
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option value=""          {% if sort == '' %}selected{% endif %}>Sort: Default</option>
+                <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: Low → High</option>
+                <option value="price_desc"{% if sort == 'price_desc' %}selected{% endif %}>Price: High → Low</option>
+                <option value="newest"    {% if sort == 'newest' %}selected{% endif %}>Newest First</option>
+                <option value="top_rated" {% if sort == 'top_rated' %}selected{% endif %}>Top Rated</option>
+            </select>
+
             <button type="submit"
                 class="bg-gradient-to-r from-purple-500 to-purple-700 text-white px-6 py-2 rounded-lg hover:opacity-90 transition">
                 Search
             </button>
-            {% if query or selected_category %}
+            {% if query or selected_category or sort %}
             <a href="{% url 'product_list' %}"
                 class="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition text-center">
                 Clear
@@ -45,8 +59,11 @@
             {% endif %}
         </form>
 
-        <!-- Results count -->
-        <p class="text-sm text-gray-500 mb-4">{{ products.count }} product{{ products.count|pluralize }} found</p>
+        <!-- Results count + page info -->
+        <p class="text-sm text-gray-500 mb-4">
+            {{ paginator.count }} product{{ paginator.count|pluralize }} found
+            (page {{ page_obj.number }} of {{ paginator.num_pages }})
+        </p>
 
         <!-- Product Grid -->
         {% if products %}
@@ -119,6 +136,47 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <p class="text-lg">No products found.</p>
+        </div>
+        {% endif %}
+
+        <!-- Pagination -->
+        {% if paginator.num_pages > 1 %}
+        <div class="flex justify-center items-center gap-1 mt-10 flex-wrap">
+
+            {% if page_obj.has_previous %}
+            <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}page={{ page_obj.previous_page_number }}"
+                class="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-purple-50 hover:border-purple-400 hover:text-purple-700 transition text-sm">
+                &larr; Prev
+            </a>
+            {% endif %}
+
+            {% for num in paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span class="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-purple-700 text-white text-sm font-semibold shadow">
+                    {{ num }}
+                </span>
+                {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}page={{ num }}"
+                    class="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-purple-50 hover:border-purple-400 hover:text-purple-700 transition text-sm">
+                    {{ num }}
+                </a>
+                {% elif num == 1 or num == paginator.num_pages %}
+                <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}page={{ num }}"
+                    class="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-purple-50 hover:border-purple-400 hover:text-purple-700 transition text-sm">
+                    {{ num }}
+                </a>
+                {% elif num == page_obj.number|add:"-3" or num == page_obj.number|add:"3" %}
+                <span class="px-2 py-2 text-gray-400 text-sm select-none">&hellip;</span>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?{% if query %}q={{ query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}page={{ page_obj.next_page_number }}"
+                class="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-purple-50 hover:border-purple-400 hover:text-purple-700 transition text-sm">
+                Next &rarr;
+            </a>
+            {% endif %}
+
         </div>
         {% endif %}
 

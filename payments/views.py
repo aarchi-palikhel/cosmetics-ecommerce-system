@@ -10,8 +10,11 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
+from django.db import transaction
+from django.db.models import F
 
 from cart.models import Cart
+from products.models import Product
 from .models import Payment, OrderItem
 
 logger = logging.getLogger(__name__)
@@ -52,20 +55,17 @@ def initiate_payment(request):
         total_amount=total,
         status='PENDING',
     )
-
-    # Snapshot cart items into OrderItems immediately so they're preserved
-    # regardless of whether payment succeeds or fails
     cart_items = list(cart.items.select_related('product').all())
     for ci in cart_items:
         OrderItem.objects.create(
             payment=payment,
+            product=ci.product,           # live FK for stock decrement on completion
             product_name=ci.product.name,
             product_price=ci.product.price,
             quantity=ci.quantity,
             subtotal=ci.get_subtotal(),
         )
 
-    # Clear the cart now — items are safe in OrderItem
     cart.items.all().delete()
 
     context = {
@@ -112,7 +112,6 @@ def payment_success(request):
         messages.error(request, 'Payment record not found.')
         return redirect('cart_detail')
 
-    # Always verify directly with eSewa — never trust the client-supplied status
     try:
         verify = requests.get(settings.ESEWA_STATUS_URL, params={
             'product_code': settings.ESEWA_PRODUCT_CODE,
@@ -126,8 +125,16 @@ def payment_success(request):
             payment.ref_id = verify_data.get('ref_id', transaction_code)
             payment.save()
 
-            # OrderItems were already created at checkout — just send confirmation
-            order_items = list(payment.items.all())
+            order_items = list(payment.items.select_related('product').all())
+            with transaction.atomic():
+                for item in order_items:
+                    if item.product_id is not None:
+                        Product.objects.filter(pk=item.product_id).update(
+                            stock=F('stock') - item.quantity
+                        )
+                        # Clamp to 0 — handles edge case where stock was already low
+                        Product.objects.filter(pk=item.product_id, stock__lt=0).update(stock=0)
+
             from mailer.email_utils import send_order_confirmation
             send_order_confirmation(request.user, payment, order_items)
 

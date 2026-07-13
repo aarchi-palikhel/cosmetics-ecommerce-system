@@ -2,6 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
+from django.core.paginator import Paginator
+from django.db.models import Avg
 from .models import Product, Category, Review, Wishlist
 from .forms import ReviewForm
 
@@ -28,13 +30,29 @@ def product_list(request):
     products = Product.objects.select_related('category').all()
     categories = Category.objects.all()
 
-    query = request.GET.get('q', '')
+    query       = request.GET.get('q', '')
     category_id = request.GET.get('category', '')
+    sort        = request.GET.get('sort', '')
 
     if query:
         products = products.filter(name__icontains=query)
     if category_id:
         products = products.filter(category__id=category_id)
+
+    SORT_OPTIONS = {
+        'price_asc':  'price',
+        'price_desc': '-price',
+        'newest':     '-created_at',
+        'top_rated':  '-avg_rating',
+    }
+    if sort in SORT_OPTIONS:
+        if sort == 'top_rated':
+            products = products.annotate(avg_rating=Avg('reviews__rating'))
+        products = products.order_by(SORT_OPTIONS[sort])
+
+    paginator = Paginator(products, 12)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
 
     wishlist_ids = set()
     if request.user.is_authenticated:
@@ -43,10 +61,13 @@ def product_list(request):
         )
 
     return render(request, 'products/product_list.html', {
-        'products': products,
+        'products': page_obj,           # page_obj is iterable like a queryset
+        'page_obj': page_obj,
+        'paginator': paginator,
         'categories': categories,
         'query': query,
         'selected_category': category_id,
+        'sort': sort,
         'wishlist_ids': wishlist_ids,
     })
 
