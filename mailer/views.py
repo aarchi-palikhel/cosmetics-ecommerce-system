@@ -1,10 +1,14 @@
-import csv
-from django.shortcuts import render, redirect
+import logging
+from html import escape
+
+from django.shortcuts import render
 from django.contrib.auth.decorators import user_passes_test
-from django.contrib import messages
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
+
 from .models import MailContact
+
+logger = logging.getLogger(__name__)
 
 
 def is_admin(user):
@@ -16,11 +20,11 @@ def compose(request):
     contacts = list(
         MailContact.objects.values('name', 'email', 'location', 'gender')
     )
-    # Add salutation to each contact dict
     for c in contacts:
         c['salutation'] = 'Mr.' if c['gender'] == 'male' else 'Ms.'
 
     preview = contacts[0] if contacts else None
+    site_url = getattr(settings, 'SITE_URL', 'http://127.0.0.1:8000')
 
     if request.method == 'POST':
         subject_template = request.POST.get('subject', '')
@@ -31,17 +35,22 @@ def compose(request):
         results = []
 
         for contact in contacts:
-            subject = subject_template \
-                .replace('{name}', contact['name']) \
-                .replace('{location}', contact['location']) \
-                .replace('{gender}', contact['gender']) \
+            subject = (subject_template
+                .replace('{name}',       contact['name'])
+                .replace('{location}',   contact['location'])
+                .replace('{gender}',     contact['gender'])
                 .replace('{salutation}', contact['salutation'])
+                .replace('{email}',      contact['email']))
 
-            body_text = body_template \
-                .replace('{name}', contact['name']) \
-                .replace('{location}', contact['location']) \
-                .replace('{gender}', contact['gender']) \
+            body_text = (body_template
+                .replace('{name}',       contact['name'])
+                .replace('{location}',   contact['location'])
+                .replace('{gender}',     contact['gender'])
                 .replace('{salutation}', contact['salutation'])
+                .replace('{email}',      contact['email']))
+
+            # Escape user-supplied body before embedding in HTML to prevent XSS
+            safe_body_html = escape(body_text)
 
             html_body = f"""
             <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;">
@@ -54,13 +63,13 @@ def compose(request):
                 <!-- Body -->
                 <div style="padding:30px;background:#fff;">
                     <p style="font-size:18px;color:#1F2937;margin-bottom:16px;">
-                        Hello, <strong>{contact['salutation']} {contact['name']}!</strong>
+                        Hello, <strong>{escape(contact['salutation'])} {escape(contact['name'])}!</strong>
                     </p>
-                    <div style="color:#4B5563;line-height:1.8;white-space:pre-line;font-size:14px;">{body_text}</div>
+                    <div style="color:#4B5563;line-height:1.8;white-space:pre-line;font-size:14px;">{safe_body_html}</div>
 
                     <!-- CTA Button -->
                     <div style="text-align:center;margin-top:30px;">
-                        <a href="http://127.0.0.1:8000"
+                        <a href="{site_url}"
                             style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;">
                             Visit Glamour Store
                         </a>
@@ -86,8 +95,11 @@ def compose(request):
                 msg.send()
                 sent += 1
                 results.append({'contact': contact, 'status': 'sent'})
-            except Exception:
+            except Exception as exc:
                 failed += 1
+                logger.error(
+                    f"Bulk mail failed for {contact['email']}: {exc}"
+                )
                 results.append({'contact': contact, 'status': 'failed'})
 
         return render(request, 'mailer/report.html', {
@@ -98,7 +110,6 @@ def compose(request):
             'subject': subject_template,
         })
 
-    # Build preview with first contact
     default_subject = "Welcome to Glamour — Your Beauty Journey Starts Here, {name}!"
     default_body = """Dear {salutation} {name},
 

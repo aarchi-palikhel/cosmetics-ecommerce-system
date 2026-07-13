@@ -1,8 +1,14 @@
+import logging
+
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate, logout
+from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db.models import Sum
+
 from .forms import RegistrationForm, LoginForm, ProfileForm
+
+logger = logging.getLogger(__name__)
 
 
 def home_view(request):
@@ -10,13 +16,17 @@ def home_view(request):
     wishlist_ids = set()
     try:
         from products.models import Product, Wishlist
-        featured_products = Product.objects.filter(is_featured=True).select_related('category')[:8]
+        featured_products = Product.objects.filter(
+            is_featured=True
+        ).select_related('category')[:8]
         if request.user.is_authenticated:
             wishlist_ids = set(
-                Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+                Wishlist.objects.filter(
+                    user=request.user
+                ).values_list('product_id', flat=True)
             )
     except Exception:
-        pass
+        logger.exception("Failed to load featured products on home page")
     return render(request, 'accounts/home.html', {
         'featured_products': featured_products,
         'wishlist_ids': wishlist_ids,
@@ -68,13 +78,15 @@ def dashboard_view(request):
     cart = Cart.objects.filter(user=request.user).first()
     cart_items_count = cart.get_total_items() if cart else 0
 
-    total_orders = Payment.objects.filter(user=request.user, status='COMPLETE').count()
-    total_spent = Payment.objects.filter(user=request.user, status='COMPLETE').values_list('total_amount', flat=True)
-    total_spent = sum(total_spent)
+    completed_payments = Payment.objects.filter(user=request.user, status='COMPLETE')
+    total_orders = completed_payments.count()
+    total_spent = completed_payments.aggregate(s=Sum('total_amount'))['s'] or 0
 
     total_reviews = Review.objects.filter(user=request.user).count()
 
-    recent_orders = Payment.objects.filter(user=request.user).order_by('-created_at')[:5]
+    recent_orders = Payment.objects.filter(
+        user=request.user
+    ).order_by('-created_at')[:5]
 
     return render(request, 'accounts/dashboard.html', {
         'cart_items_count': cart_items_count,

@@ -3,16 +3,30 @@ from django.conf import settings
 
 
 def send_order_confirmation(user, payment, order_items):
-    salutation = 'Mr.' if user.first_name else ''
+    # Determine salutation from the user's gender field if available,
+    # otherwise fall back to a neutral greeting.
+    gender = getattr(user, 'gender', None)  # CustomUser has no gender; safe fallback
+    if gender == 'male':
+        salutation = 'Mr.'
+    elif gender == 'female':
+        salutation = 'Ms.'
+    else:
+        salutation = ''
+
+    display_name = user.get_full_name() or user.username
+    greeting = f"{salutation} {display_name}".strip() if salutation else display_name
+
+    site_url = getattr(settings, 'SITE_URL', 'http://127.0.0.1:8000')
 
     items_html = ''
     items_text = ''
     for item in order_items:
         # Supports both OrderItem (product_name/product_price) and CartItem (product.name/product.price)
-        name = getattr(item, 'product_name', None) or item.product.name
+        name  = getattr(item, 'product_name', None) or item.product.name
         price = getattr(item, 'product_price', None) or item.product.price
-        qty = item.quantity
-        sub = getattr(item, 'subtotal', None) or (price * qty)
+        qty   = item.quantity
+        sub   = getattr(item, 'subtotal', None) or (price * qty)
+
         items_html += f"""
         <tr>
             <td style="padding:10px;border-bottom:1px solid #F3F4F6;color:#374151;">{name}</td>
@@ -21,13 +35,11 @@ def send_order_confirmation(user, payment, order_items):
             <td style="padding:10px;border-bottom:1px solid #F3F4F6;color:#7C3AED;font-weight:bold;text-align:right;">Rs. {sub}</td>
         </tr>
         """
-        items_text += f"  - {item.product.name} x{item.quantity} — Rs. {subtotal}\n"
-
-    display_name = user.get_full_name() or user.username
+        items_text += f"  - {name} x{qty} — Rs. {sub}\n"
 
     subject = f"Order Confirmed — Glamour #{payment.transaction_uuid[:12].upper()}"
 
-    text_body = f"""Dear {display_name},
+    text_body = f"""Dear {greeting},
 
 Thank you for your order at Glamour!
 
@@ -69,7 +81,7 @@ The Glamour Team
         <!-- Body -->
         <div style="padding:30px;background:#fff;">
             <p style="font-size:16px;color:#1F2937;margin-bottom:20px;">
-                Dear <strong>{display_name}</strong>,<br>
+                Dear <strong>{greeting}</strong>,<br>
                 <span style="color:#6B7280;font-size:14px;">Thank you for shopping at Glamour. Here's your order summary.</span>
             </p>
 
@@ -109,7 +121,7 @@ The Glamour Team
             </p>
 
             <div style="text-align:center;margin-top:24px;">
-                <a href="http://127.0.0.1:8000/products/"
+                <a href="{site_url}/products/"
                     style="background:linear-gradient(135deg,#7C3AED,#EC4899);color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;">
                     Continue Shopping
                 </a>
@@ -133,4 +145,8 @@ The Glamour Team
         msg.attach_alternative(html_body, "text/html")
         msg.send()
     except Exception as e:
-        print(f"Order confirmation email failed: {e}")
+        import logging
+        logging.getLogger(__name__).error(
+            f"Order confirmation email failed for user={user.username} "
+            f"order={payment.transaction_uuid}: {e}"
+        )

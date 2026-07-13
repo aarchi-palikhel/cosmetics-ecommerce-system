@@ -7,6 +7,8 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY is not set. Add it to your .env file.")
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
@@ -64,11 +66,11 @@ WSGI_APPLICATION = 'ecommerce.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'mssql',
-        'NAME': 'ecommerce_system',
-        'HOST': 'DESKTOP-6HBTVKU',
-        'PORT': '',
+        'NAME': os.getenv('DB_NAME', 'ecommerce_system'),
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', ''),
         'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
+            'driver': os.getenv('DB_DRIVER', 'ODBC Driver 17 for SQL Server'),
             'trusted_connection': 'yes',  # Windows Authentication
         },
     }
@@ -92,7 +94,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kathmandu'
 USE_I18N = True
 USE_TZ = True
 
@@ -132,3 +134,6 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Path to email CSV
 EMAIL_CSV_PATH = BASE_DIR / 'email.csv'
+
+# Base URL used in outgoing emails (no trailing slash)
+SITE_URL = os.getenv('SITE_URL', 'http://127.0.0.1:8000')
